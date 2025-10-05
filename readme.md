@@ -1,4 +1,6 @@
 # Clang/AST Libary 
+Note thư viện lại để triển khai thuận toán, đọc k hiểu thì lên đọc docs.
+<img width="540" height="406" alt="image" src="https://github.com/user-attachments/assets/57667e42-7510-49ce-b68a-699b49a79929" />
 
 ## Nhóm thư viện nền tảng AST
 ### "clang/AST/Decl.h"
@@ -62,5 +64,67 @@ public:
     }
 };
 ```
-## Bộ công cụ xây dựng tool
+- FuTag:
+```
+class FutagAnalyzer : public Checker<check::ASTDecl<TranslationUnitDecl>> {
+    ...
+    void checkASTDecl(const TranslationUnitDecl *TUD, AnalysisManager &Mgr,
+BugReporter &BR) const;
+}
+
+TranslationUnitDecl là nút gốc của toàn bộ cây AST
+Thông báo rõ checkASTDecl() được gọi một lần cho mỗi Translation Unit (file 
+.c/.cpp) trong dự án, không phải một lần duy nhất cho toàn bộ thư viện.
+
+```
+
+### "clang/StaticAnalyzer/Core/CheckerManager.h" 
+- Chức năng: thu thập các Checker được đăng ký (register...check).
+
+```
+void ento::registerFutagAnalyzer(CheckerManager &Mgr) {
+    Mgr.registerChecker<FutagAnalyzer>();
+}
+```
+
+### "clang/StaticAnalyzer/Core/PathSensitive/AnalysisManager.h"
+- Dễ hiểu thì "AnalysisManager" là thằng quyết lưu Function,... cho Checker 
+
+```
+int add(int a, int b);
+```
+- Khi Clang Static Analyzer được dùng để phân tích hàm add():
+    1. Tạo 1 đối tượng AnalysisManager (gọi tắt là Mrg)
+    2. Ra lệnh cho Mrg quản lý toàn bộ mọi thứ liên quan đến hàm add() này
+
+- Checker như FutagAnalyzer nhận vào Mgr và trích xuất thông tin để xử lý:
+    - Mgr.getCFG(func)
+    - Mgr.getASTContext()
+    - ...
+
+## Thư viện công cụ hỗ trợ (Tool & Basic)
+### "clang/Basic/SourceManager.h"
+
+- Chức năng: "SourceManager" là "Người Quản lý Bản đồ". Header này định nghĩa lớp SourceManager, có nhiệm vụ quản lý tất cả thông tin liên quan đến vị trí của mã nguồn. Nó biết chính xác mỗi ký tự, mỗi khai báo đến từ file nào, dòng bao nhiêu, cột bao nhiêu.
+- Ứng dụng chính để lọc các hàm hệ thống...
+```
+bool checkSystemHeader(FD *func) { // Giả sử func trỏ đén printf <stdio..h>
+    SourceLocation loc = func->getLocation(); // Lấy "tọa độ" của hàm
+    SourceManager &sm = Mgr.getSourceManager();
+    bool is_system = sm.isInSystemHeader(loc); // Hỏi "bản đồ"
+    std::string filename = sm.getFilename(loc).str(); // Lấy tên file từ "tọa độ")
+}
+```
+
+### "clang/Analysis/AnalysisDeclContext.h"
+### "clang/Tooling/Tooling.h"
+```
+./my_tool my_file.c -- -I/some/path
+
+CommonOptionsParser OptionsParser(...);
+ClangTool Tool(OptionsParser.getCompilations(), 
+               OptionsParser.getSourcePathList());
+Tool.run(...);
+```
+
 
