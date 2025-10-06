@@ -123,6 +123,7 @@ sm.isInSystemHeader(); // check file hệ thống
 ### "clang/Analysis/AnalysisDeclContext.h"
 ### "clang/Tooling/Tooling.h"
 ```
+```
 ./my_tool my_file.c -- -I/some/path
 
 CommonOptionsParser OptionsParser(...);
