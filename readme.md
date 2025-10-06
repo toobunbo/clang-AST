@@ -115,7 +115,11 @@ bool checkSystemHeader(FD *func) { // Giả sử func trỏ đén printf <stdio.
     std::string filename = sm.getFilename(loc).str(); // Lấy tên file từ "tọa độ")
 }
 ```
-
+```
+const SourceManager &sm = Mgr.getASTContext().getSourceManager();
+sm.getMainFileID(); // trả về file mã nguồn chính
+sm.getFilename(SourceLocation Loc); // nhận vào Localtion trả về filename
+sm.isInSystemHeader(); // check file hệ thống 
 ### "clang/Analysis/AnalysisDeclContext.h"
 ### "clang/Tooling/Tooling.h"
 ```
